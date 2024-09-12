@@ -2,7 +2,7 @@
 // src/app/register/page.tsx
 import React, { useState } from 'react';
 import Link from "next/link";
-
+import PasswordComponent from "@/components/ui/password";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -108,6 +108,7 @@ const RegisterPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      <PasswordComponent></PasswordComponent>
     </div>
   );
 };
