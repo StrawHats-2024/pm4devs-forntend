@@ -108,7 +108,6 @@ const RegisterPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-      <PasswordComponent></PasswordComponent>
     </div>
   );
 };
