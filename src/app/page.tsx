@@ -1,18 +1,24 @@
+// app/page.tsx
+
 "use client"
-import { useState } from "react"
+
+import { useState, useEffect } from "react"
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Eye, EyeOff, Key, Plus, Search, Home, User, Users, Share2 } from "lucide-react"
 import PasswordComponent from "@/components/ui/password"
+import AddNewPassword from "@/components/ui/addme"
 import Link from "next/link"
+import { toast } from "@/hooks/use-toast"
 
 const mockPasswords = [
-  { id: 1, name: "Google", username: "user@example.com", lastUpdated: "2023-04-15" },
-  { id: 2, name: "GitHub", username: "devuser", lastUpdated: "2023-05-20" },
-  { id: 3, name: "Netflix", username: "moviebuff", lastUpdated: "2023-06-10" },
-  { id: 4, name: "Amazon", username: "shopper123", lastUpdated: "2023-07-05" },
+  { id: 1, name: "Google", username: "user@example.com", lastUpdated: "2023-04-15", type: "password" },
+  { id: 2, name: "GitHub", username: "devuser", lastUpdated: "2023-05-20", type: "ssh_key" },
+  { id: 3, name: "Netflix", username: "moviebuff", lastUpdated: "2023-06-10", type: "password" },
+  { id: 4, name: "Amazon", username: "shopper123", lastUpdated: "2023-07-05", type: "api_key" },
 ]
 
 const SidebarItem = ({
@@ -35,13 +41,73 @@ const SidebarItem = ({
         </span>
       </div>
     </Link>
-  );
-};
+  )
+}
 
 export default function PasswordManagerDashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [showPasswords, setShowPasswords] = useState(false)
   const [selectedPasswordId, setSelectedPasswordId] = useState<number | null>(null)
+  const [isAddNewOpen, setIsAddNewOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [userData, setUserData] = useState<{ username: string } | null>(null)
+  const router = useRouter()
+
+  // useEffect(() => {
+  //   const verifyToken = async () => {
+  //     const token = localStorage.getItem('token')
+      
+  //     const user_id = localStorage.getItem('user_id')
+  //     if (token && user_id) {
+  //       router.push('/')
+  //       console.log("access token" , token);
+  //     }else{
+  //         router.push('/login')
+  //       }
+  //   }
+
+  //   verifyToken()
+  // }, [router])
+  useEffect(() => {
+    const verifyToken = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        router.push('/login')
+        return
+      }
+
+      try {
+        const response = await fetch('http://localhost:3001/api/v1/auth/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({token: token})
+        })
+
+        if (!response.ok) {
+          throw new Error('Token verification failed')
+        }
+
+        const data = await response.json()
+        setUserData(data.user)
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Token verification error:', error)
+        localStorage.removeItem('token')
+        localStorage.removeItem('user_id')
+        router.push('/login')
+      }
+    }
+
+    verifyToken()
+  }, [router])
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user_id')
+    router.push('/login')
+  }
 
   const filteredPasswords = mockPasswords.filter(
     (password) =>
@@ -53,7 +119,49 @@ export default function PasswordManagerDashboard() {
     setSelectedPasswordId(selectedPasswordId === id ? null : id)
   }
 
+  const handleAddNew = async (newPassword: { encrypted_data: string; type: string }) => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No access token found')
+      }
+
+      const response = await fetch('http://localhost:3001/api/v1/secrets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newPassword)
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to add new secret')
+      }
+
+      const result = await response.json()
+      console.log('New secret added:', result)
+      toast({
+        title: "Success",
+        description: "New secret added successfully",
+      })
+      setIsAddNewOpen(false)
+      // Here you would typically update your local state or refetch the passwords
+    } catch (error) {
+      console.error('Error adding new secret:', error)
+      toast({
+        title: "Error",
+        description: "Failed to add new secret. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const selectedPassword = mockPasswords.find((p) => p.id === selectedPasswordId)
+
+  // if (isLoading) {
+  //   return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+  // }
 
   return (
     <div className="min-h-screen bg-black text-white flex">
@@ -74,13 +182,16 @@ export default function PasswordManagerDashboard() {
           <header className="bg-black shadow border-b border-gray-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
               <h1 className="text-3xl font-bold text-white flex items-center">
-
-                  DevVault
+                DevVault
               </h1>
-              <Avatar>
-                <AvatarImage src="https://avatars.dicebear.com/api/initials/username.svg" alt="User" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
+              <div className="flex items-center space-x-4">
+                <span>Welcome, {userData?.username}</span>
+                <Avatar>
+                  <AvatarImage src={`https://avatars.dicebear.com/api/initials/${userData?.username}.svg`} alt={userData?.username} />
+                  <AvatarFallback>{userData?.username.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <Button onClick={handleLogout} variant="outline">Logout</Button>
+              </div>
             </div>
           </header>
 
@@ -90,20 +201,20 @@ export default function PasswordManagerDashboard() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Search passwords..."
+                  placeholder="Search secrets..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 w-full bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
-              <Button className="ml-4 bg-blue-600 hover:bg-blue-700 text-white">
+              <Button className="ml-4 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setIsAddNewOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Add New
               </Button>
             </div>
 
             <Card className="bg-gray-900 border border-gray-800">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b border-gray-800">
-                <CardTitle className="text-2xl font-bold text-white">Saved Passwords</CardTitle>
+                <CardTitle className="text-2xl font-bold text-white">Saved Secrets</CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -111,7 +222,7 @@ export default function PasswordManagerDashboard() {
                   className="text-sm text-gray-300 bg-gray-800"
                 >
                   {showPasswords ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
-                  {showPasswords ? "Hide" : "Show"} Passwords
+                  {showPasswords ? "Hide" : "Show"} Secrets
                 </Button>
               </CardHeader>
               <CardContent>
@@ -127,6 +238,7 @@ export default function PasswordManagerDashboard() {
                         <p className="text-sm text-gray-400">{password.username}</p>
                       </div>
                       <div className="text-right">
+                        <p className="text-sm text-gray-400">Type: {password.type}</p>
                         <p className="text-sm text-gray-400">Last updated: {password.lastUpdated}</p>
                       </div>
                     </div>
@@ -149,6 +261,12 @@ export default function PasswordManagerDashboard() {
           )}
         </div>
       </div>
+
+      <AddNewPassword
+        isOpen={isAddNewOpen}
+        onClose={() => setIsAddNewOpen(false)}
+        onAdd={handleAddNew}
+      />
     </div>
-  );
-};
+  )
+}
