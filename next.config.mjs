@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*', // URL path that you want to rewrite
-        destination: 'http://localhost:3001/api/v1/:path*', // Ensure the destination path is correct
+        destination: 'http://159.89.173.5:3000/api/:path*', // Ensure the destination path is correct
       },
     ];
   },

@@ -50,6 +50,7 @@ export default function PasswordManagerDashboard() {
   const [selectedPasswordId, setSelectedPasswordId] = useState<number | null>(null)
   const [isAddNewOpen, setIsAddNewOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [passwords, setPasswords] = useState(mockPasswords)
   const [userData, setUserData] = useState<{ username: string } | null>(null)
   const router = useRouter()
 
@@ -77,10 +78,12 @@ export default function PasswordManagerDashboard() {
       }
 
       try {
-        const response = await fetch('http://localhost:3001/api/v1/auth/verify', {
+        localStorage.setItem('token',token);
+        const response = await fetch('/api/v1/auth/verify', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `${localStorage.getItem('token')}`
           },
           body: JSON.stringify({token: token})
         })
@@ -95,7 +98,6 @@ export default function PasswordManagerDashboard() {
       } catch (error) {
         console.error('Token verification error:', error)
         localStorage.removeItem('token')
-        localStorage.removeItem('user_id')
         router.push('/login')
       }
     }
@@ -119,39 +121,85 @@ export default function PasswordManagerDashboard() {
     setSelectedPasswordId(selectedPasswordId === id ? null : id)
   }
 
-  const handleAddNew = async (newPassword: { encrypted_data: string; type: string }) => {
+  // const handleAddNew = async (newPassword: { encrypted_data: string; type: string }) => {
+  //   try {
+  //     const token = localStorage.getItem('token')
+  //     if (!token) {
+  //       throw new Error('No access token found')
+  //     }
+
+  //     const response = await fetch('http://localhost:3001/api/v1/secrets', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`
+  //       },
+  //       body: JSON.stringify(newPassword)
+  //     })
+
+  //     if (!response.ok) {
+  //       throw new Error('Failed to add new secret')
+  //     }
+
+  //     const result = await response.json()
+  //     console.log('New secret added:', result)
+  //     toast({
+  //       title: "Success",
+  //       description: "New secret added successfully",
+  //     })
+  //     setIsAddNewOpen(false)
+  //     // Here you would typically update your local state or refetch the passwords
+  //   } catch (error) {
+  //     console.error('Error adding new secret:', error)
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to add new secret. Please try again.",
+  //       variant: "destructive",
+  //     })
+  //   }
+  // }
+  const handleAddNew = async (newPassword: { secret_type: string; encrypted_data: string;  description: string }) => {
+    console.log(newPassword);
     try {
       const token = localStorage.getItem('token')
       if (!token) {
         throw new Error('No access token found')
       }
-
-      const response = await fetch('http://localhost:3001/api/v1/secrets', {
+      localStorage.setItem('token', token);
+      const response = await fetch('/api/v1/secrets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `${localStorage.getItem('token')}`
         },
+        credentials: 'include', // This line ensures cookies are sent with the request
         body: JSON.stringify(newPassword)
       })
+      console.log(await response.json());
 
       if (!response.ok) {
-        throw new Error('Failed to add new secret')
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to add new secret')
       }
 
       const result = await response.json()
       console.log('New secret added:', result)
-      toast({
-        title: "Success",
-        description: "New secret added successfully",
-      })
+
+      // Update the passwords state with the new secret
+      setPasswords(prevPasswords => [...prevPasswords, {
+        id: result.id, // Assuming the server returns an id for the new secret
+        name: result.name || 'New Secret',
+        username: 'Hidden', // The actual username is encrypted
+        lastUpdated: new Date().toISOString().split('T')[0],
+        type: newPassword.secret_type
+      }])
+
       setIsAddNewOpen(false)
-      // Here you would typically update your local state or refetch the passwords
     } catch (error) {
       console.error('Error adding new secret:', error)
       toast({
         title: "Error",
-        description: "Failed to add new secret. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to add new secret. Please try again.",
         variant: "destructive",
       })
     }

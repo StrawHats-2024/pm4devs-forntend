@@ -28,7 +28,7 @@ const LoginPage: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/v1/auth/login', {
+      const response = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
