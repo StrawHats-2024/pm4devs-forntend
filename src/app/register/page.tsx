@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 
 const RegisterPage: React.FC = () => {
-  const [username, setUsername] = useState('');
+  // const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,28 +29,21 @@ const RegisterPage: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch('/api/v1/auth/register', {
+      const response = await fetch('/v1/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+
         },
-        body: JSON.stringify({username, email, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
-      console.log(data);
-      console.log(data.token);
       
       if (!response.ok) {
         throw new Error(data.message || 'Failed to register');
-      }
-
-      if (data.token && data.user_id) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user_id', data.user_id);
-        router.push('/');
       } else {
-        throw new Error('Invalid response from server');
+        router.push('/login');
       }
 
 
@@ -73,7 +66,7 @@ const RegisterPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleRegister} className="grid gap-4">
-              <div className="grid gap-2">
+              {/* <div className="grid gap-2">
                 <label htmlFor="username">Username</label>
                 <input
                   id="username"
@@ -83,7 +76,7 @@ const RegisterPage: React.FC = () => {
                   placeholder="Max"
                   required
                 />
-              </div>
+              </div> */}
               <div className="grid gap-2">
                 <label htmlFor="email">Email</label>
                 <input

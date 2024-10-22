@@ -28,7 +28,7 @@ const LoginPage: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch('/api/v1/auth/login', {
+      const response = await fetch('/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,14 +40,10 @@ const LoginPage: React.FC = () => {
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to login');
-      }
-
-      if (data.token && data.user_id) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user_id', data.user_id);
+      }else {
         router.push('/');
-      } else {
-        throw new Error('Invalid response from server');
+        localStorage.setItem('token', data.token)
+        console.log(data.token)
       }
     } catch (error) {
       console.error('Login error:', error);

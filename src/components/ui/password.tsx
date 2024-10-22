@@ -15,9 +15,9 @@ interface PasswordComponentProps {
 
 export default function PasswordComponent({ onClose }: PasswordComponentProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [username, setUsername] = useState("Jeevan")
-  const [password, setPassword] = useState("Jeevan@42003")
-  const [website, setWebsite] = useState("https://instagram.com")
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [website, setWebsite] = useState("")
   const [copiedUsername, setCopiedUsername] = useState(false)
   const [copiedPassword, setCopiedPassword] = useState(false)
 
