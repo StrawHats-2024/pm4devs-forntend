@@ -5,13 +5,13 @@
 // import { Input } from "@/components/ui/input"
 // import { Textarea } from "@/components/ui/textarea"
 // import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+// // import { X } from "lucide-react"
 // import { toast } from "@/hooks/use-toast"
 
 // interface AddNewPasswordProps {
 //   isOpen: boolean
 //   onClose: () => void
-//   onAdd: (newPassword: { name: string; secret_type: string; encrypted_data: string; description: string }) => void
+//   onAdd: (newPassword: { name: string; encrypted_data: string }) => void
 // }
 
 // const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd }) => {
@@ -19,12 +19,14 @@
 //   const [username, setUsername] = useState('')
 //   const [password, setPassword] = useState('')
 //   const [description, setDescription] = useState('')
-//   const [secret_type, setType] = useState('password')
 //   const [isSubmitting, setIsSubmitting] = useState(false)
 
 //   // Simulate encryption by concatenating the values into a string
-//   const getEncryptedData = (data: string) => {
-//     return `Encrypted(${data})` // Just a placeholder string for now
+//   const getEncryptedData = (username: string, password: string, description?: string) => {
+//     const data = description
+//       ? `Encrypted(username: ${username}, password: ${password}, description: ${description})`
+//       : `Encrypted(username: ${username}, password: ${password})`
+//     return data
 //   }
 
 //   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,14 +34,11 @@
 //     setIsSubmitting(true)
 
 //     try {
-//       const dataToEncrypt = JSON.stringify({ username, password, secret_type })
-//       const encryptedData = getEncryptedData(dataToEncrypt) // No real encryption here
+//       const encryptedData = getEncryptedData(username, password, description)
 
 //       const newSecret = {
 //         name,
-//         secret_type,
-//         encrypted_data: encryptedData,
-//         description
+//         encrypted_data: encryptedData
 //       }
 
 //       await onAdd(newSecret)
@@ -49,7 +48,6 @@
 //       setUsername('')
 //       setPassword('')
 //       setDescription('')
-//       setType('password')
 //       onClose()
 
 //       toast({
@@ -73,6 +71,9 @@
 //       <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white">
 //         <DialogHeader>
 //           <DialogTitle className="text-2xl font-bold">Add New Secret</DialogTitle>
+//           {/* <Button variant="ghost" size="icon" onClick={onClose} className="absolute right-4 top-4">
+//             <X className="h-4 w-4" />
+//           </Button> */}
 //         </DialogHeader>
 //         <form onSubmit={handleSubmit} className="space-y-4">
 //           <div>
@@ -115,19 +116,6 @@
 //               className="bg-gray-800 border-gray-700 text-white"
 //             />
 //           </div>
-//           <div>
-//             <label htmlFor="type" className="text-sm font-medium text-gray-400">Type</label>
-//             <Select value={secret_type} onValueChange={setType}>
-//               <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-//                 <SelectValue placeholder="Select type" />
-//               </SelectTrigger>
-//               <SelectContent className="bg-gray-800 border-gray-700 text-white">
-//                 <SelectItem value="password">Password</SelectItem>
-//                 <SelectItem value="ssh_key">SSH Key</SelectItem>
-//                 <SelectItem value="api_key">API Key</SelectItem>
-//               </SelectContent>
-//             </Select>
-//           </div>
 //           <DialogFooter>
 //             <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={isSubmitting}>
 //               {isSubmitting ? 'Adding...' : 'Add Secret'}
@@ -146,15 +134,15 @@
 import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+// import { Textarea } from "@/components/ui/textarea"
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-// import { X } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 interface AddNewPasswordProps {
   isOpen: boolean
   onClose: () => void
-  onAdd: (newPassword: { name: string; encrypted_data: string }) => void
+  onAdd: (newPassword: { name: string; encrypted_data: string; iv: string }) => void
 }
 
 const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd }) => {
@@ -164,12 +152,22 @@ const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd 
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Simulate encryption by concatenating the values into a string
-  const getEncryptedData = (username: string, password: string, description?: string) => {
-    const data = description
-      ? `Encrypted(username: ${username}, password: ${password}, description: ${description})`
-      : `Encrypted(username: ${username}, password: ${password})`
-    return data
+  // AES-GCM encryption function
+  const encryptData = async (key: CryptoKey, data: string): Promise<{ encryptedData: Uint8Array, iv: Uint8Array }> => {
+    const enc = new TextEncoder()
+    const encodedData = enc.encode(data)
+    const iv = window.crypto.getRandomValues(new Uint8Array(12)) // Generate random IV for AES-GCM
+
+    const encryptedData = await window.crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encodedData
+    )
+
+    return {
+      encryptedData: new Uint8Array(encryptedData),
+      iv
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,11 +175,22 @@ const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd 
     setIsSubmitting(true)
 
     try {
-      const encryptedData = getEncryptedData(username, password, description)
+      const encryptionKeyBase64 = process.env.NEXT_PUBLIC_ENCRYPTION_KEY // Get the key from environment variables
+      if (!encryptionKeyBase64) {
+        throw new Error("Encryption key is not configured.")
+      }
+
+      // Convert Base64 key to CryptoKey
+      const rawKey = Uint8Array.from(atob(encryptionKeyBase64), c => c.charCodeAt(0))
+      const cryptoKey = await window.crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["encrypt", "decrypt"])
+
+      // Encrypt username and password
+      const { encryptedData, iv } = await encryptData(cryptoKey, `username:${username},password:${password}`)
 
       const newSecret = {
         name,
-        encrypted_data: encryptedData
+        encrypted_data: btoa(String.fromCharCode(...Array.from(encryptedData))), // Convert to Base64 string
+        iv: btoa(String.fromCharCode(...Array.from(iv))) // Convert IV to Base64 string
       }
 
       await onAdd(newSecret)
@@ -198,7 +207,7 @@ const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd 
         description: "New secret added successfully",
       })
     } catch (error) {
-      console.error('Error adding new secret:', error)
+      console.error("Error adding new secret:", error)
       toast({
         title: "Error",
         description: "Failed to add new secret. Please try again.",
@@ -214,9 +223,6 @@ const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd 
       <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Add New Secret</DialogTitle>
-          {/* <Button variant="ghost" size="icon" onClick={onClose} className="absolute right-4 top-4">
-            <X className="h-4 w-4" />
-          </Button> */}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -248,15 +254,6 @@ const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd 
               onChange={(e) => setPassword(e.target.value)}
               className="bg-gray-800 border-gray-700 text-white"
               required
-            />
-          </div>
-          <div>
-            <label htmlFor="description" className="text-sm font-medium text-gray-400">Description (Optional)</label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="bg-gray-800 border-gray-700 text-white"
             />
           </div>
           <DialogFooter>
