@@ -4,7 +4,6 @@ import { useState } from "react"
 import { usePathname  } from "next/navigation"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { Home, User, Users, Share2, Key } from "lucide-react"
 
 
@@ -40,8 +39,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
-      <aside className={`bg-black ${isSidebarOpen ? 'w-16' : 'w-0'} min-h-screen flex flex-col items-center py-8 border-r border-gray-800 transition-all duration-300`}>
+    <div className="min-h-screen bg-slate-950 text-white flex">
+      <aside className={`bg-slate-950 ${isSidebarOpen ? 'w-16' : 'w-0'} min-h-screen flex flex-col items-center py-8 border-r border-gray-800 transition-all duration-300`}>
       <div className="mb-8">
           <Key className="h-8 w-8"></Key>
       </div>
@@ -54,7 +53,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex-1">
-        <header className="bg-black shadow border-b border-gray-800">
+        <header className="bg-slate-950 shadow border-b border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
             <div className="flex items-center">
               <h1 className="text-3xl font-bold text-white flex items-center">

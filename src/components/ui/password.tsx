@@ -1,109 +1,255 @@
-'use client'
+// 'use client'
+// import { useEffect } from "react";
+// import { useState } from "react"
+// import { Button } from "@/components/ui/button"
+// import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+// import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+// import { Edit, Share, MoreVertical, Star, Trash2, X, Copy, Check } from "lucide-react"
+// import { Separator } from "@/components/ui/separator"
+// import { Input } from "@/components/ui/input"
+// import { toast } from "@/hooks/use-toast"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Edit, Share, MoreVertical, Star, Trash2, X, Copy, Check } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
-import { toast } from "@/hooks/use-toast"
+// async function decryptAESGCM(encrypted_data: string, iv: string, key: string ) {
+//   const decoder = new TextDecoder();
+//   const encodedKey = await crypto.subtle.importKey(
+//       "raw",
+//       new TextEncoder().encode(key),
+//       { name: "AES-GCM" },
+//       false,
+//       ["decrypt"]
+//   );
+//   const decrypted = await crypto.subtle.decrypt(
+//       { name: "AES-GCM", iv: new Uint8Array(iv) },
+//       encodedKey,
+//       new Uint8Array(atob(encrypted_data).split("").map((char) => char.charCodeAt(0)))
+//   );
+//   return decoder.decode(decrypted);
+// }
+
+// interface PasswordComponentProps {
+//   onClose: () => void;
+//   encrypted_data: string;
+//   iv: string;
+//   name: string;
+// }
+
+// export default function PasswordComponent({ onClose, encrypted_data, iv, name }: PasswordComponentProps) {
+//   const [isEditing, setIsEditing] = useState(false)
+//   const [username, setUsername] = useState("")
+//   const [password, setPassword] = useState("")
+//   const [copiedUsername, setCopiedUsername] = useState(false)
+//   const [copiedPassword, setCopiedPassword] = useState(false)
+//   useEffect(() => {
+//     const decryptData = async () => {
+//         try {
+//             const decryptionKey = localStorage.getItem("decryptionKey"); // Fetch your AES decryption key from where you stored it
+//             const decryptedData = await decryptAESGCM(encrypted_data, iv, decryptionKey);
+//             const { username, password } = JSON.parse(decryptedData);
+//             setUsername(username);
+//             setPassword(password);
+//         } catch (error) {
+//             console.error("Failed to decrypt data:", error);
+//         }
+//     };
+    
+//     decryptData();
+// }, [encrypted_data, iv]);
+//   const handleEdit = () => {
+//     setIsEditing(!isEditing)
+//   }
+
+//   const handleSave = () => {
+//     setIsEditing(false)
+//     // Here you would typically save the changes to your backend
+//   }
+
+//   const copyToClipboard = async (text: string, field: 'username' | 'password') => {
+//     try {
+//       await navigator.clipboard.writeText(text)
+//       if (field === 'username') {
+//         setCopiedUsername(true)
+//         setTimeout(() => setCopiedUsername(false), 2000)
+//       } else {
+//         setCopiedPassword(true)
+//         setTimeout(() => setCopiedPassword(false), 2000)
+//       }
+//       toast({
+//         title: "Copied!",
+//         description: `${field.charAt(0).toUpperCase() + field.slice(1)} copied to clipboard.`,
+//       })
+//     } catch (err) {
+//       console.error('Failed to copy text: ', err)
+//       toast({
+//         title: "Error",
+//         description: "Failed to copy to clipboard.",
+//         variant: "destructive",
+//       })
+//     }
+//   }
+
+'use client';
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Edit, Share, MoreVertical, Star, Trash2, X, Copy, Check } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
+
+// Convert Base64 string to ArrayBuffer
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+
+// Import the key from Base64 input
+async function importKeyFromBase64(base64Key: string) {
+  const rawKey = base64ToArrayBuffer(base64Key);
+  return await window.crypto.subtle.importKey(
+    "raw",
+    rawKey,
+    { name: "AES-GCM" },
+    true,
+    ["encrypt", "decrypt"]
+  );
+}
+
+function base64ToUtf8(base64String : string ) {
+  // Decode Base64 to a byte string
+  const byteString = atob(base64String);
+  
+  // Convert byte string to UTF-8
+  const utf8String = decodeURIComponent(
+    Array.from(byteString)
+      .map(byte => '%' + ('00' + byte.charCodeAt(0).toString(16)).slice(-2))
+      .join('')
+  );
+  
+  return utf8String;
+}
+
+// Decrypt data using AES-GCM
+async function decryptAESGCM(encrypted_data: string, iv: string, key: string) {
+  const decoder = new TextDecoder();
+  const converted_data = base64ToUtf8(encrypted_data);
+  const converted_iv = base64ToUtf8(iv);
+  console.log(converted_data,converted_iv);
+  const encodedKey = await importKeyFromBase64(key);
+
+  const decodedIv = Uint8Array.from(atob(converted_iv), c => c.charCodeAt(0));
+  const decodedEncryptedData = Uint8Array.from(atob(converted_data), c => c.charCodeAt(0));
+
+  const decrypted = await window.crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: new Uint8Array(decodedIv) },
+    encodedKey,
+    new Uint8Array(decodedEncryptedData)
+  );
+
+  return decoder.decode(decrypted);
+}
 
 interface PasswordComponentProps {
   onClose: () => void;
+  encrypted_data: string;
+  iv: string;
+  name: string;
 }
 
-export default function PasswordComponent({ onClose }: PasswordComponentProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  // const [website, setWebsite] = useState("")
-  const [copiedUsername, setCopiedUsername] = useState(false)
-  const [copiedPassword, setCopiedPassword] = useState(false)
+export default function PasswordComponent({ onClose, encrypted_data, iv, name }: PasswordComponentProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [copiedUsername, setCopiedUsername] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
-  const handleEdit = () => {
-    setIsEditing(!isEditing)
-  }
+  useEffect(() => {
+    const decryptData = async () => {
+      try {
+        const decryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY;
+        if (!decryptionKey) {
+          throw new Error("Decryption key not found.");
+        }
 
+        const decryptedData = await decryptAESGCM(encrypted_data, iv , decryptionKey);
+        
+        const { username, password } = JSON.parse(decryptedData);
+        setUsername(username);
+        setPassword(password);
+        console.log(encrypted_data);
+      } catch (error) {
+        console.error("Failed to decrypt data:", error);
+      }
+    };
+
+    decryptData();
+  }, [encrypted_data, iv]);
+
+  const handleEdit = () => setIsEditing(!isEditing);
+  
   const handleSave = () => {
-    setIsEditing(false)
-    // Here you would typically save the changes to your backend
-  }
+    setIsEditing(false);
+    // TODO: Save changes to backend
+  };
 
   const copyToClipboard = async (text: string, field: 'username' | 'password') => {
     try {
-      await navigator.clipboard.writeText(text)
+      await navigator.clipboard.writeText(text);
       if (field === 'username') {
-        setCopiedUsername(true)
-        setTimeout(() => setCopiedUsername(false), 2000)
+        setCopiedUsername(true);
+        setTimeout(() => setCopiedUsername(false), 2000);
       } else {
-        setCopiedPassword(true)
-        setTimeout(() => setCopiedPassword(false), 2000)
+        setCopiedPassword(true);
+        setTimeout(() => setCopiedPassword(false), 2000);
       }
       toast({
         title: "Copied!",
         description: `${field.charAt(0).toUpperCase() + field.slice(1)} copied to clipboard.`,
-      })
+      });
     } catch (err) {
-      console.error('Failed to copy text: ', err)
+      console.error('Failed to copy text: ', err);
       toast({
         title: "Error",
         description: "Failed to copy to clipboard.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   return (
-    <Card className="h-full bg-gray-900 text-white border-none">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b border-gray-800">
+    <Card className="h-full bg-slate-950 border-none text-white">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 m-0 p-4 ">
         <div className="flex items-center space-x-2">
           <span className="font-semibold">Owner</span>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="text-gray-400">
-            Personal
-          </Button>
-          <Button variant="ghost" size="icon" className="text-gray-400">
-            <Share className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="text-gray-400" onClick={handleEdit}>
-            <Edit className="h-4 w-4" />
-          </Button>
+          <Button variant="ghost" size="sm" className="text-gray-400">Personal</Button>
+          <Button variant="ghost" size="icon" className="text-gray-400"><Share className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="text-gray-400" onClick={handleEdit}><Edit className="h-4 w-4" /></Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-gray-400">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
+              <Button variant="ghost" size="icon" className="text-gray-400"><MoreVertical className="h-4 w-4" /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-gray-800 text-white">
-              <DropdownMenuItem className="focus:bg-gray-700">
-                <Star className="mr-2 h-4 w-4" />
-                <span>Add to favorites</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="focus:bg-gray-700">
-                <Trash2 className="mr-2 h-4 w-4" />
-                <span>Delete</span>
-              </DropdownMenuItem>
+              <DropdownMenuItem className="focus:bg-gray-700"><Star className="mr-2 h-4 w-4" /><span>Add to favorites</span></DropdownMenuItem>
+              <DropdownMenuItem className="focus:bg-gray-700"><Trash2 className="mr-2 h-4 w-4" /><span>Delete</span></DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" size="icon" className="text-gray-400" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <Button variant="ghost" size="icon" className="text-gray-400" onClick={onClose}><X className="h-4 w-4" /></Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <div className="flex items-center space-x-4">
-          {/* <div className="h-12 w-12 bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
-            Logo
-          </div> */}
-          <h2 className="text-2xl font-bold">Instagram</h2>
+          <h2 className="text-2xl font-bold">{name}</h2>
         </div>
         <div className="border border-gray-800 rounded-lg">
           <div className="p-3">
-            <label htmlFor="username" className="text-xs text-gray-400">
-              Username
-            </label>
+            <label htmlFor="username" className="text-xs text-gray-400">Username</label>
             <div className="flex items-center mt-1">
               <Input
                 id="username"
@@ -112,21 +258,14 @@ export default function PasswordComponent({ onClose }: PasswordComponentProps) {
                 className="bg-gray-800 border-none text-white flex-grow"
                 readOnly={!isEditing}
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="ml-2 text-gray-400"
-                onClick={() => copyToClipboard(username, 'username')}
-              >
+              <Button variant="ghost" size="icon" className="ml-2 text-gray-400" onClick={() => copyToClipboard(username, 'username')}>
                 {copiedUsername ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
           </div>
           <Separator className="bg-gray-800" />
           <div className="p-3">
-            <label htmlFor="password" className="text-xs text-gray-400">
-              Password
-            </label>
+            <label htmlFor="password" className="text-xs text-gray-400">Password</label>
             <div className="flex items-center mt-1">
               <Input
                 id="password"
@@ -136,38 +275,19 @@ export default function PasswordComponent({ onClose }: PasswordComponentProps) {
                 className="bg-gray-800 border-none text-white flex-grow"
                 readOnly={!isEditing}
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="ml-2 text-gray-400"
-                onClick={() => copyToClipboard(password, 'password')}
-              >
+              <Button variant="ghost" size="icon" className="ml-2 text-gray-400" onClick={() => copyToClipboard(password, 'password')}>
                 {copiedPassword ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
           </div>
         </div>
-        <div>
-          {/* <label htmlFor="website" className="text-xs text-gray-400">
-            Website
-          </label>
-          <Input
-            id="website"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
-            className="bg-gray-800 border-none text-white mt-1"
-            readOnly={!isEditing}
-          /> */}
-        </div>
         {isEditing && (
-          <Button onClick={handleSave} className="w-full bg-blue-600 hover:bg-blue-700">
-            Save Changes
-          </Button>
+          <Button onClick={handleSave} className="w-full bg-blue-600 hover:bg-blue-700">Save Changes</Button>
         )}
       </CardContent>
       <CardFooter>
         <p className="text-xs text-gray-500">Last edited Friday, August 30, 2024 at 12:22:59 PM</p>
       </CardFooter>
     </Card>
-  )
+  );
 }
