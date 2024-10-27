@@ -17,7 +17,7 @@ export default function PasswordComponent({ onClose }: PasswordComponentProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [website, setWebsite] = useState("")
+  // const [website, setWebsite] = useState("")
   const [copiedUsername, setCopiedUsername] = useState(false)
   const [copiedPassword, setCopiedPassword] = useState(false)
 
@@ -94,9 +94,9 @@ export default function PasswordComponent({ onClose }: PasswordComponentProps) {
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <div className="flex items-center space-x-4">
-          <div className="h-12 w-12 bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
+          {/* <div className="h-12 w-12 bg-gray-800 rounded-xl flex items-center justify-center text-gray-400">
             Logo
-          </div>
+          </div> */}
           <h2 className="text-2xl font-bold">Instagram</h2>
         </div>
         <div className="border border-gray-800 rounded-lg">
@@ -148,7 +148,7 @@ export default function PasswordComponent({ onClose }: PasswordComponentProps) {
           </div>
         </div>
         <div>
-          <label htmlFor="website" className="text-xs text-gray-400">
+          {/* <label htmlFor="website" className="text-xs text-gray-400">
             Website
           </label>
           <Input
@@ -157,7 +157,7 @@ export default function PasswordComponent({ onClose }: PasswordComponentProps) {
             onChange={(e) => setWebsite(e.target.value)}
             className="bg-gray-800 border-none text-white mt-1"
             readOnly={!isEditing}
-          />
+          /> */}
         </div>
         {isEditing && (
           <Button onClick={handleSave} className="w-full bg-blue-600 hover:bg-blue-700">

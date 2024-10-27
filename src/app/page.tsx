@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
+import moment from 'moment';
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -36,7 +37,7 @@ const SidebarItem = ({
 
 export default function PasswordManagerDashboard() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [showPasswords, setShowPasswords] = useState(false)
+  // const [showPasswords, setShowPasswords] = useState(false)
   const [selectedPasswordId, setSelectedPasswordId] = useState<number | null>(null)
   const [isAddNewOpen, setIsAddNewOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -97,11 +98,10 @@ export default function PasswordManagerDashboard() {
   const filteredPasswords = passwords.filter(
     (password) =>
       password.name && password.name.toLowerCase().includes(searchTerm.toLowerCase())
-      // password.username.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handlePasswordClick = (id: number) => {
-    setSelectedPasswordId(selectedPasswordId === id ? null : id)
+  const handlePasswordClick = (secret_id: number) => {
+    setSelectedPasswordId(selectedPasswordId === secret_id ? null : secret_id)
   }
 
   const handleAddNew = async (newPassword: { name: string; encrypted_data: string; iv: string }) => {
@@ -225,9 +225,9 @@ export default function PasswordManagerDashboard() {
                         <h3 className="text-lg font-semibold text-white">{password.name}</h3>
                         {/* <p className="text-sm text-gray-400">{password.username}</p> */}
                       </div>
-                      {/* <div className="text-right">
-                        <p className="text-sm text-gray-400">Last updated: {password.lastUpdated}</p>
-                      </div> */}
+                      <div className="text-right">
+                        <p className="text-sm text-gray-400">Last updated: {moment(password.created_at).format(' h:mm A MMM DD, YYYY ')}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
