@@ -247,7 +247,7 @@ const PasswordComponent : React.FC<PasswordComponentProps> = ({ onClose, encrypt
     <Card className="h-full bg-slate-950 border-none text-white">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 m-0 p-4 ">
         <div className="flex items-center space-x-2">
-          <span className="font-semibold">Owner</span>
+          <span className="font-semibold">User</span>
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="text-gray-400">Personal</Button>

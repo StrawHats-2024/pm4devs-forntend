@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-// import { Textarea } from "@/components/ui/textarea"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
@@ -18,7 +17,6 @@ const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd 
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  // const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // AES-GCM encryption function
@@ -68,7 +66,6 @@ const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd 
       setName('')
       setUsername('')
       setPassword('')
-      // setDescription('')
       onClose()
 
       toast({
@@ -115,7 +112,7 @@ const AddNewPassword: React.FC<AddNewPasswordProps> = ({ isOpen, onClose, onAdd 
             />
           </div>
           <div>
-            <label htmlFor="password" className="text-sm font-medium text-gray-400">Password/Key</label>
+            <label htmlFor="password" className="text-sm font-medium text-gray-400">Secret-Key</label>
             <Input
               id="password"
               type="password"

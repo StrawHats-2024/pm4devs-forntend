@@ -6,7 +6,7 @@ import moment from 'moment';
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Eye, EyeOff, Key, Plus, Search, Home, User, Users, Share2 } from "lucide-react"
+import { Key, Plus, Search, Home, User, Users, Share2 } from "lucide-react"
 import PasswordComponent from "@/components/ui/password"
 import AddNewPassword from "@/components/ui/addme"
 import Link from "next/link"
@@ -157,7 +157,7 @@ export default function PasswordManagerDashboard() {
       }
 
       const result = await response.json();
-      // setRefresh((prev) => !prev);
+      setRefresh((prev) => !prev);
       // setPasswords(prevPasswords => [
       //   ...prevPasswords,
       //   {
@@ -207,7 +207,7 @@ export default function PasswordManagerDashboard() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
               <h1 className="text-3xl font-bold text-white flex items-center">DevVault</h1>
               <div className="flex items-center space-x-4">
-                <span>Welcome {userData?.username}</span>
+                <span>Welcome , User </span>
                 <Avatar>
                   <AvatarImage src={`https://avatars.dicebear.com/api/initials/${userData?.username}.svg`} alt={userData?.username} />
                   <AvatarFallback>{userData?.username.charAt(0).toUpperCase()}</AvatarFallback>
@@ -250,7 +250,6 @@ export default function PasswordManagerDashboard() {
                         <h2 className="text-lg font-semibold text-white">{password.name}</h2>
                         <span className="text-sm text-gray-400">{moment(password.created_at).format('h:mm A MMM DD, YYYY')}</span>
                       </div>
-                      {/* <p className="text-gray-500">Username: {password.username}</p> */}
                     </div>
                   ))}
                 </div>
