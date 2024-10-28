@@ -1,92 +1,3 @@
-// 'use client'
-// import { useEffect } from "react";
-// import { useState } from "react"
-// import { Button } from "@/components/ui/button"
-// import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-// import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-// import { Edit, Share, MoreVertical, Star, Trash2, X, Copy, Check } from "lucide-react"
-// import { Separator } from "@/components/ui/separator"
-// import { Input } from "@/components/ui/input"
-// import { toast } from "@/hooks/use-toast"
-
-// async function decryptAESGCM(encrypted_data: string, iv: string, key: string ) {
-//   const decoder = new TextDecoder();
-//   const encodedKey = await crypto.subtle.importKey(
-//       "raw",
-//       new TextEncoder().encode(key),
-//       { name: "AES-GCM" },
-//       false,
-//       ["decrypt"]
-//   );
-//   const decrypted = await crypto.subtle.decrypt(
-//       { name: "AES-GCM", iv: new Uint8Array(iv) },
-//       encodedKey,
-//       new Uint8Array(atob(encrypted_data).split("").map((char) => char.charCodeAt(0)))
-//   );
-//   return decoder.decode(decrypted);
-// }
-
-// interface PasswordComponentProps {
-//   onClose: () => void;
-//   encrypted_data: string;
-//   iv: string;
-//   name: string;
-// }
-
-// export default function PasswordComponent({ onClose, encrypted_data, iv, name }: PasswordComponentProps) {
-//   const [isEditing, setIsEditing] = useState(false)
-//   const [username, setUsername] = useState("")
-//   const [password, setPassword] = useState("")
-//   const [copiedUsername, setCopiedUsername] = useState(false)
-//   const [copiedPassword, setCopiedPassword] = useState(false)
-//   useEffect(() => {
-//     const decryptData = async () => {
-//         try {
-//             const decryptionKey = localStorage.getItem("decryptionKey"); // Fetch your AES decryption key from where you stored it
-//             const decryptedData = await decryptAESGCM(encrypted_data, iv, decryptionKey);
-//             const { username, password } = JSON.parse(decryptedData);
-//             setUsername(username);
-//             setPassword(password);
-//         } catch (error) {
-//             console.error("Failed to decrypt data:", error);
-//         }
-//     };
-    
-//     decryptData();
-// }, [encrypted_data, iv]);
-//   const handleEdit = () => {
-//     setIsEditing(!isEditing)
-//   }
-
-//   const handleSave = () => {
-//     setIsEditing(false)
-//     // Here you would typically save the changes to your backend
-//   }
-
-//   const copyToClipboard = async (text: string, field: 'username' | 'password') => {
-//     try {
-//       await navigator.clipboard.writeText(text)
-//       if (field === 'username') {
-//         setCopiedUsername(true)
-//         setTimeout(() => setCopiedUsername(false), 2000)
-//       } else {
-//         setCopiedPassword(true)
-//         setTimeout(() => setCopiedPassword(false), 2000)
-//       }
-//       toast({
-//         title: "Copied!",
-//         description: `${field.charAt(0).toUpperCase() + field.slice(1)} copied to clipboard.`,
-//       })
-//     } catch (err) {
-//       console.error('Failed to copy text: ', err)
-//       toast({
-//         title: "Error",
-//         description: "Failed to copy to clipboard.",
-//         variant: "destructive",
-//       })
-//     }
-//   }
-
 'use client';
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -159,14 +70,38 @@ interface PasswordComponentProps {
   encrypted_data: string;
   iv: string;
   name: string;
+  secret_id : number;
 }
 
-export default function PasswordComponent({ onClose, encrypted_data, iv, name }: PasswordComponentProps) {
+const PasswordComponent : React.FC<PasswordComponentProps> = ({ onClose, encrypted_data, iv, name ,secret_id }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState("");
+  const [Name, setName] = useState(name);
   const [password, setPassword] = useState("");
   const [copiedUsername, setCopiedUsername] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
+
+  useEffect(() => {
+    setName(name); // Update Name when the name prop changes
+  }, [name]);
+
+    // AES-GCM encryption function
+    const encryptData = async (key: CryptoKey, data: string): Promise<{ encryptedData: Uint8Array, iv: Uint8Array }> => {
+      const enc = new TextEncoder()
+      const encodedData = enc.encode(data)
+      const iv = window.crypto.getRandomValues(new Uint8Array(12)) // Generate random IV for AES-GCM
+  
+      const encryptedData = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        encodedData
+      )
+  
+      return {
+        encryptedData: new Uint8Array(encryptedData),
+        iv
+      }
+    }
 
   useEffect(() => {
     const decryptData = async () => {
@@ -190,11 +125,98 @@ export default function PasswordComponent({ onClose, encrypted_data, iv, name }:
     decryptData();
   }, [encrypted_data, iv]);
 
+  const handleDelete = async() =>{
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found. Please log in again.');
+      }
+
+      const response = await fetch('/v1/secrets', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({secret_id})
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete new secret');
+      }
+    } catch (error) {
+      console.error('Error deleting secret:', error);
+    }
+
+  };
+  
+
   const handleEdit = () => setIsEditing(!isEditing);
   
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsEditing(false);
-    // TODO: Save changes to backend
+    try {
+      const encryptionKeyBase64 = process.env.NEXT_PUBLIC_ENCRYPTION_KEY // Get the key from environment variables
+      if (!encryptionKeyBase64) {
+        throw new Error("Encryption key is not configured.")
+      }
+
+      // Convert Base64 key to CryptoKey
+      const rawKey = Uint8Array.from(atob(encryptionKeyBase64), c => c.charCodeAt(0))
+      const cryptoKey = await window.crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["encrypt", "decrypt"])
+
+      // Encrypt username and password
+      const { encryptedData, iv } = await encryptData(cryptoKey, `{"password":"${password}","username":"${username}"}`)
+
+      const updateSecret = {
+        secret_id,
+        name:Name,
+        encrypted_data: btoa(String.fromCharCode(...Array.from(encryptedData))), // Convert to Base64 string
+        iv: btoa(String.fromCharCode(...Array.from(iv))) // Convert IV to Base64 string
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No token found. Please log in again.');
+        }
+  
+        const response = await fetch('/v1/secrets', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(updateSecret)
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to delete new secret');
+        }
+
+      } catch (error) {
+        console.error('Error deleting secret:', error);
+      }
+      toast({
+        title: "Success",
+        description: "New secret added successfully",
+      })
+    } catch (error) {
+      console.error("Error adding new secret:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add new secret. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsEditing(false)
+    }
+  };
+  const handleCancel = () => {
+    setIsEditing(false);
+    setName(name); // Revert any changes made to Name
   };
 
   const copyToClipboard = async (text: string, field: 'username' | 'password') => {
@@ -237,7 +259,7 @@ export default function PasswordComponent({ onClose, encrypted_data, iv, name }:
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-gray-800 text-white">
               <DropdownMenuItem className="focus:bg-gray-700"><Star className="mr-2 h-4 w-4" /><span>Add to favorites</span></DropdownMenuItem>
-              <DropdownMenuItem className="focus:bg-gray-700"><Trash2 className="mr-2 h-4 w-4" /><span>Delete</span></DropdownMenuItem>
+              <DropdownMenuItem className="focus:bg-gray-700"><Trash2 className="mr-2 h-4 w-4" /><button onClick={handleDelete}>Delete</button></DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="ghost" size="icon" className="text-gray-400" onClick={onClose}><X className="h-4 w-4" /></Button>
@@ -245,7 +267,16 @@ export default function PasswordComponent({ onClose, encrypted_data, iv, name }:
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-bold">{name}</h2>
+        {isEditing ? (
+            <Input
+              id="Name"
+              value={Name}
+              onChange={(e) => setName(e.target.value)}
+              className="bg-gray-800 border-none text-white flex-grow"
+            />
+          ) : (
+            <h2 className="text-xl font-semibold">{Name}</h2>
+          )}
         </div>
         <div className="border border-gray-800 rounded-lg">
           <div className="p-3">
@@ -282,7 +313,10 @@ export default function PasswordComponent({ onClose, encrypted_data, iv, name }:
           </div>
         </div>
         {isEditing && (
-          <Button onClick={handleSave} className="w-full bg-blue-600 hover:bg-blue-700">Save Changes</Button>
+          <div className="flex space-x-2">
+            <Button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full" onClick={handleSave}>Save Changes</Button>
+            <Button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full" onClick={handleCancel}>Cancel</Button>
+          </div>
         )}
       </CardContent>
       <CardFooter>
@@ -290,4 +324,7 @@ export default function PasswordComponent({ onClose, encrypted_data, iv, name }:
       </CardFooter>
     </Card>
   );
-}
+};
+export default  PasswordComponent;
+
+
