@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import moment from 'moment';
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar } from "@/components/ui/avatar"
 import { Key, Plus, Search, Home, User, Users, Share2 } from "lucide-react"
 import PasswordComponent from "@/components/ui/password"
 import AddNewPassword from "@/components/ui/addme"
@@ -52,9 +52,9 @@ const PasswordManagerDashboard: React.FC = () => {
   const [isAddNewOpen, setIsAddNewOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [passwords, setPasswords] = useState<Password[]>([])
-  const [isNoSecrets, setIsNoSecrets] = useState(true)
+  const [, setIsNoSecrets] = useState(true)
   const [refresh, setRefresh] = useState(false);
-  const [secrets, setSecrets] = useState([]);
+  const [, setSecrets] = useState([]);
   const [userName, setUserName] = useState<string | null>(null);
   const router = useRouter()
 
@@ -106,7 +106,7 @@ const PasswordManagerDashboard: React.FC = () => {
     };
 
     fetchPasswords();
-  }, [router,refresh]);
+  }, [router,userName,refresh]);
 
   useEffect(() => {
     // Retrieve the user_name from localStorage when the component mounts
@@ -159,7 +159,6 @@ const PasswordManagerDashboard: React.FC = () => {
         throw new Error(errorData.message || 'Failed to add new secret');
       }
 
-      const result = await response.json();
 
       setRefresh((prev) => !prev);
       // setPasswords(prevPasswords => [

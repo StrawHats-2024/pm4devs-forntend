@@ -24,14 +24,14 @@ interface Password {
 type ShareType = "by-you" | "to-you";
 
 export default function Shared() {
-  const [refresh, setRefresh] = useState(false);
+  const [refresh, ] = useState(false);
   const router = useRouter();
   const [selectedPasswordId, setSelectedPasswordId] = useState<number | null>(null);
   const [selectedPasswordData, setSelectedPasswordData] = useState<Password | null>(null);
   const [passwords, setPasswords] = useState<Password[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isNoSecrets, setIsNoSecrets] = useState(true);
+  const [, setIsNoSecrets] = useState(true);
   const [shareType, setShareType] = useState<ShareType>("by-you");
 
   useEffect(() => {

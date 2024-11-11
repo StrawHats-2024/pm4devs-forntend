@@ -85,7 +85,6 @@ const PasswordComponent : React.FC<PasswordComponentProps> = ({ onClose, encrypt
   const [group_name, setGroupName] = useState('');
   const [permission, setPermission] = useState('read-only');
   const [towhom, setTowhom] = useState('user')
-  const [toggle, setToggle] = useState()
 
   useEffect(() => {
     setName(name); // Update Name when the name prop changes

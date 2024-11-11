@@ -38,7 +38,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const pathname = usePathname()
   const [userName, setUserName] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isSidebarOpen, ] = useState(true)
   const router  =  useRouter()
 
   const handleLogout = () => {

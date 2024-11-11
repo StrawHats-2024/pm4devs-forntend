@@ -71,7 +71,6 @@ const ShareduserPasswordComponent: React.FC<PasswordComponentProps> = ({
   encrypted_data,
   iv,
   name,
-  secret_id,
   permission,
   createdAt,
   updatedAt

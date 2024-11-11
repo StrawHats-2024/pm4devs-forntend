@@ -34,7 +34,6 @@ const LoginPage: React.FC = () => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token')
       const response = await fetch('/v1/auth/login', {
         method: 'POST',
         headers: {
@@ -112,7 +111,7 @@ const LoginPage: React.FC = () => {
               {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
             </form>
             <div className="mt-4 text-center text-sm">
-              Don't have an account?{' '}
+              <p>Don't have an account?{' '}</p>
               <Link href="/register" className="underline">
                 Sign up
               </Link>

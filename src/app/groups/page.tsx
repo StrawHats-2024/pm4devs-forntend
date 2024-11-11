@@ -5,7 +5,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import { Search, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -25,8 +24,6 @@ interface Groups {
   id: number
 }
 
-interface UserData {
-}
 
 export default function Groups() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -35,11 +32,9 @@ export default function Groups() {
   const [isAddNewOpen, setIsAddNewOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [groups, setGroups] = useState<Groups[]>([])
-  const [userData, setUserData] = useState<UserData | null>(null)
   const [refresh, setRefresh] = useState(false)
   const [newGroupName, setNewGroupName] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadGroups = async () => {

@@ -11,7 +11,7 @@ interface GroupInfoProps {
   onClose: () => void;
 }
 
-export default function GroupInfo({ group_name, groupId, onClose }: GroupInfoProps) {
+export default function GroupInfo({ group_name, onClose }: GroupInfoProps) {
   const [activeTab, setActiveTab] = useState("passwords");
   const router = useRouter();
 
@@ -20,8 +20,8 @@ export default function GroupInfo({ group_name, groupId, onClose }: GroupInfoPro
     secrets: [],
     users: [],
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [noInfo, setNoInfo] = useState(true);
+  const [, setIsLoading] = useState(true);
+  const [, setNoInfo] = useState(true);
 
   useEffect(() => {
     const fetchPasswords = async () => {
