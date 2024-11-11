@@ -13,14 +13,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EyeIcon, EyeOffIcon } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const router = useRouter();
+
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +34,7 @@ const LoginPage: React.FC = () => {
     setError(null);
 
     try {
+      const token = localStorage.getItem('token')
       const response = await fetch('/v1/auth/login', {
         method: 'POST',
         headers: {
@@ -37,12 +44,13 @@ const LoginPage: React.FC = () => {
       });
 
       const data = await response.json();
-
+      
       if (!response.ok) {
         throw new Error(data.message || 'Failed to login');
       }else {
         router.push('/');
         localStorage.setItem('token', data.token)
+        localStorage.setItem('user_name', email);
         console.log(data.token)
       }
     } catch (error) {
@@ -76,16 +84,27 @@ const LoginPage: React.FC = () => {
                   required
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid relative">
                 <label htmlFor="password">Password</label>
                 <input
                   id="password"
-                  type="password"
+                  type= {isPasswordVisible ? "text":"password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1"
                   required
                 />
+                 <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 pt-6"
+                     >
+                    {isPasswordVisible ? (
+                      <EyeOffIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                    </button>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Logging in...' : 'Login'}

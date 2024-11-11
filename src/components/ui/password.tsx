@@ -80,6 +80,12 @@ const PasswordComponent : React.FC<PasswordComponentProps> = ({ onClose, encrypt
   const [password, setPassword] = useState("");
   const [copiedUsername, setCopiedUsername] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [user_email, setEmail] = useState('');
+  const [group_name, setGroupName] = useState('');
+  const [permission, setPermission] = useState('read-only');
+  const [towhom, setTowhom] = useState('user')
+  const [toggle, setToggle] = useState()
 
   useEffect(() => {
     setName(name); // Update Name when the name prop changes
@@ -87,19 +93,24 @@ const PasswordComponent : React.FC<PasswordComponentProps> = ({ onClose, encrypt
 
     // AES-GCM encryption function
     const encryptData = async (key: CryptoKey, data: string): Promise<{ encryptedData: Uint8Array, iv: Uint8Array }> => {
-      const enc = new TextEncoder()
-      const encodedData = enc.encode(data)
-      const iv = window.crypto.getRandomValues(new Uint8Array(12)) // Generate random IV for AES-GCM
+      try {
+        const enc = new TextEncoder();
+        const encodedData = enc.encode(data);
+        const iv = window.crypto.getRandomValues(new Uint8Array(12)); // Generate random IV for AES-GCM
   
-      const encryptedData = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        key,
-        encodedData
-      )
+        const encryptedData = await window.crypto.subtle.encrypt(
+          { name: "AES-GCM", iv },
+          key,
+          encodedData
+        );
   
-      return {
-        encryptedData: new Uint8Array(encryptedData),
-        iv
+        return {
+          encryptedData: new Uint8Array(encryptedData),
+          iv
+        };
+      } catch (error) {
+        console.error("Encryption error:", error);
+        throw error;
       }
     }
 
@@ -125,6 +136,37 @@ const PasswordComponent : React.FC<PasswordComponentProps> = ({ onClose, encrypt
     decryptData();
   }, [encrypted_data, iv]);
 
+  const handleShare = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Your session expired, please log in again.');
+      }
+
+      const body = JSON.stringify({ secret_id, ...(towhom === "user" ? { user_email } : { group_name }) , permission });
+
+      const endpoint = towhom === 'user' ? '/v1/secrets/share/user' : '/v1/secrets/share/group'
+
+      const response = await fetch(endpoint, {
+
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: body
+      });
+
+      console.log("Sharing request body:", body);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to share');
+      }
+    } catch (error) {
+      console.error('Error sharing secret:', error);
+    }
+  };
+
   const handleDelete = async() =>{
     try {
       const token = localStorage.getItem('token');
@@ -132,14 +174,17 @@ const PasswordComponent : React.FC<PasswordComponentProps> = ({ onClose, encrypt
         throw new Error('No token found. Please log in again.');
       }
 
+      const body = JSON.stringify({secret_id})
+
       const response = await fetch('/v1/secrets', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({secret_id})
+        body: body
       });
+      console.log(body);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -148,70 +193,65 @@ const PasswordComponent : React.FC<PasswordComponentProps> = ({ onClose, encrypt
     } catch (error) {
       console.error('Error deleting secret:', error);
     }
+    setIsModalOpen(false);
 
   };
   
 
   const handleEdit = () => setIsEditing(!isEditing);
   
+
   const handleSave = async () => {
     setIsEditing(false);
     try {
-      const encryptionKeyBase64 = process.env.NEXT_PUBLIC_ENCRYPTION_KEY // Get the key from environment variables
+      const encryptionKeyBase64 = process.env.NEXT_PUBLIC_ENCRYPTION_KEY;
       if (!encryptionKeyBase64) {
-        throw new Error("Encryption key is not configured.")
+        throw new Error("Encryption key is not configured.");
       }
 
-      // Convert Base64 key to CryptoKey
-      const rawKey = Uint8Array.from(atob(encryptionKeyBase64), c => c.charCodeAt(0))
-      const cryptoKey = await window.crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["encrypt", "decrypt"])
+      const rawKey = Uint8Array.from(atob(encryptionKeyBase64), c => c.charCodeAt(0));
+      const cryptoKey = await window.crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["encrypt", "decrypt"]);
 
-      // Encrypt username and password
-      const { encryptedData, iv } = await encryptData(cryptoKey, `{"password":"${password}","username":"${username}"}`)
-
+      const { encryptedData, iv } = await encryptData(cryptoKey, `{"password":"${password}","username":"${username}"}`);
       const updateSecret = {
         secret_id,
-        name:Name,
-        encrypted_data: btoa(String.fromCharCode(...Array.from(encryptedData))), // Convert to Base64 string
-        iv: btoa(String.fromCharCode(...Array.from(iv))) // Convert IV to Base64 string
+        name: Name,
+        encrypted_data: btoa(String.fromCharCode(...Array.from(encryptedData))),
+        iv: btoa(String.fromCharCode(...Array.from(iv)))
+      };
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found. Please log in again.');
       }
 
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No token found. Please log in again.');
-        }
-  
-        const response = await fetch('/v1/secrets', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(updateSecret)
-        });
-  
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to delete new secret');
-        }
+      const response = await fetch('/v1/secrets', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updateSecret)
+      });
 
-      } catch (error) {
-        console.error('Error deleting secret:', error);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update secret');
       }
+
       toast({
         title: "Success",
-        description: "New secret added successfully",
-      })
+        description: "Secret updated successfully",
+      });
     } catch (error) {
-      console.error("Error adding new secret:", error)
+      console.error("Error saving secret:", error);
       toast({
         title: "Error",
-        description: "Failed to add new secret. Please try again.",
+        description: "Failed to save secret. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsEditing(false)
+      setIsEditing(false);
     }
   };
   const handleCancel = () => {
@@ -251,7 +291,64 @@ const PasswordComponent : React.FC<PasswordComponentProps> = ({ onClose, encrypt
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="text-gray-400">Personal</Button>
-          <Button variant="ghost" size="icon" className="text-gray-400"><Share className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="text-gray-400" onClick={() => setIsModalOpen(true)}><Share className="h-4 w-4" /></Button>
+          {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-80">
+            
+            {/* Email Input */}
+            <select
+        value={towhom}
+        onChange={(e) => setTowhom(e.target.value)}
+        className="bg-gray-800 rounded p-2 w-full mb-4"
+      >
+        <option value="user">User</option>
+        <option value="group">Group</option>
+      </select>
+
+      {towhom === "user" && (
+        <input
+          type="email"
+          placeholder="Enter user email"
+          value={user_email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="bg-gray-800 rounded p-2 w-full mb-4"
+        />
+      )}
+
+      {towhom === "group" && (
+        <input
+          type="text"
+          placeholder="Enter Group Name"
+          value={group_name}
+          onChange={(e) => setGroupName(e.target.value)}
+          className="bg-gray-800 rounded p-2 w-full mb-4"
+        />
+      )}
+            
+            {/* Permission Dropdown */}
+            <select
+              value={permission}
+              onChange={(e) => setPermission(e.target.value)}
+              className="bg-gray-800 rounded p-2 w-full mb-4"
+            >
+              <option value="read-only">read-only</option>
+              <option value="read-write">read-write</option>
+            </select>
+            <div className="grid">
+                {/* Share Button */}
+                <button onClick={handleShare} className="bg-blue-500 text-white px-4 py-2 rounded">
+                  Share
+                </button>
+                
+                {/* Close Modal Button */}
+                <button onClick={() => setIsModalOpen(false)} className="mt-2 text-gray-500">
+                  Close
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
           <Button variant="ghost" size="icon" className="text-gray-400" onClick={handleEdit}><Edit className="h-4 w-4" /></Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -22,10 +22,6 @@ interface Password {
   iv?: string; // Optional if not always available
 }
 
-interface UserData {
-  username: string;
-}
-
 const SidebarItem = ({
   icon: Icon,
   label,
@@ -49,18 +45,20 @@ const SidebarItem = ({
   )
 }
 
-export default function PasswordManagerDashboard() {
+const PasswordManagerDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPasswordId, setSelectedPasswordId] = useState<number | null>(null)
   const [selectedPasswordData, setSelectedPasswordData] = useState<Password | null>(null);
   const [isAddNewOpen, setIsAddNewOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [passwords, setPasswords] = useState<Password[]>([])
-  const [userData, setUserData] = useState<UserData | null>(null)
   const [isNoSecrets, setIsNoSecrets] = useState(true)
   const [refresh, setRefresh] = useState(false);
   const [secrets, setSecrets] = useState([]);
+  const [userName, setUserName] = useState<string | null>(null);
   const router = useRouter()
+
+
 
   useEffect(() => {
     const fetchPasswords = async () => {
@@ -89,12 +87,12 @@ export default function PasswordManagerDashboard() {
         }
 
         const data = await response.json();
+        console.log(userName);
         setSecrets(data);
         if (!data.data) {
           setIsNoSecrets(false)
         }
         data.data && setPasswords(data.data); // Assuming data.data contains the passwords
-        setUserData(data.user); // Assuming user data is returned
       } catch (error) {
         console.error('Error fetching passwords:', error);
         toast({
@@ -110,6 +108,11 @@ export default function PasswordManagerDashboard() {
     fetchPasswords();
   }, [router,refresh]);
 
+  useEffect(() => {
+    // Retrieve the user_name from localStorage when the component mounts
+    const storedUserName = localStorage.getItem('user_name');
+    setUserName(storedUserName);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -157,6 +160,7 @@ export default function PasswordManagerDashboard() {
       }
 
       const result = await response.json();
+
       setRefresh((prev) => !prev);
       // setPasswords(prevPasswords => [
       //   ...prevPasswords,
@@ -183,6 +187,7 @@ export default function PasswordManagerDashboard() {
     }
   };
 
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
@@ -207,10 +212,10 @@ export default function PasswordManagerDashboard() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
               <h1 className="text-3xl font-bold text-white flex items-center">DevVault</h1>
               <div className="flex items-center space-x-4">
-                <span>Welcome , User </span>
+                <p className="text-white"> {userName} </p>
                 <Avatar>
-                  <AvatarImage src={`https://avatars.dicebear.com/api/initials/${userData?.username}.svg`} alt={userData?.username} />
-                  <AvatarFallback>{userData?.username.charAt(0).toUpperCase()}</AvatarFallback>
+                  {/* <AvatarImage src={`https://avatars.dicebear.com/api/initials/${userName}.svg`} alt={userName} /> */}
+                  {/* <AvatarFallback>{userName.charAt(0).toUpperCase()}</AvatarFallback> */}
                 </Avatar>
                 <Button onClick={handleLogout} className="bg-slate-950 text-white">Logout</Button>
               </div>
@@ -280,4 +285,5 @@ export default function PasswordManagerDashboard() {
     </div>
   )
 
-}
+};
+export default PasswordManagerDashboard;

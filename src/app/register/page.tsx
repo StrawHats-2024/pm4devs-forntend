@@ -21,6 +21,7 @@ const RegisterPage: React.FC = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // const [Username, setUsername] = useState('');
 
   const router = useRouter();
 
@@ -32,7 +33,8 @@ const RegisterPage: React.FC = () => {
     }
     setLoading(true);
     setError(null);
-
+    const body = JSON.stringify({email, password })
+    console.log(body);
     try {
       const response = await fetch('/v1/auth/register', {
         method: 'POST',
@@ -40,8 +42,9 @@ const RegisterPage: React.FC = () => {
           'Content-Type': 'application/json',
 
         },
-        body: JSON.stringify({ email, password }),
+        body: body,
       });
+
 
       const data = await response.json();
       
@@ -59,6 +62,9 @@ const RegisterPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  
+
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
   };

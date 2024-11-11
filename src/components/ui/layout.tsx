@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from "react"
+import { useState , useEffect} from "react"
 import { usePathname  } from "next/navigation"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Home, User, Users, Share2, Key } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Button } from "./button"
 
 
 const SidebarItem = ({
@@ -35,7 +37,19 @@ const SidebarItem = ({
 export default function Layout({ children }: { children: React.ReactNode }) {
 
   const pathname = usePathname()
+  const [userName, setUserName] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const router  =  useRouter()
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    router.push('/login');
+  }
+  useEffect(() => {
+    // Retrieve the user_name from localStorage when the component mounts
+    const storedUserName = localStorage.getItem('user_name');
+    setUserName(storedUserName);
+  }, []);
 
 
   return (
@@ -60,10 +74,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                  DevVault
               </h1>
             </div>
+            <div className="flex items-center space-x-4">
+             <p className="text-white"> {userName} </p>
             <Avatar>
               <AvatarImage src="https://avatars.dicebear.com/api/initials/username.svg" alt="User" />
               <AvatarFallback>U</AvatarFallback>
             </Avatar>
+            <Button onClick={handleLogout} className="bg-slate-950 text-white">Logout</Button>
+            </div>
           </div>
         </header>
 
