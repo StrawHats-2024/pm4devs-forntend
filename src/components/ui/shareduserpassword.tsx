@@ -161,7 +161,8 @@ const ShareduserPasswordComponent: React.FC<PasswordComponentProps> = ({
             <h2 className="text-xl font-semibold">{Name}</h2>
           )}
         </div>
-        <div>
+        <div className="flex items-center space-x-2 justify-end">
+        <p>{permission}</p>
         <Button className = " mr-4" variant="ghost" size="icon" onClick={handleEdit}>
           <Edit className="h-4 w-4 text-gray-400" />
         </Button>

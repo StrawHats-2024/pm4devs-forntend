@@ -193,11 +193,11 @@ const PasswordManagerDashboard: React.FC = () => {
 
   return (
     <div  className="min-h-screen bg-slate-950 text-white flex">
-      <aside className="bg-slate-950 w-16 min-h-screen flex flex-col items-center py-8 border-r border-gray-800">
-        <div className="mb-8">
+      <aside className="bg-slate-950 w-20 min-h-screen flex flex-col items-center py-8 border-r border-gray-800">
+        <div className=" mb-14">
           <Key className="h-8 w-8" />
         </div>
-        <nav className="space-y-4">
+        <nav className=" space-y-10 grid ">
           <SidebarItem icon={Home} label="Home" href="/" /> 
           <SidebarItem icon={User} label="Personal" href="/personal" /> 
           <SidebarItem icon={Users} label="Groups" href="/groups" /> 

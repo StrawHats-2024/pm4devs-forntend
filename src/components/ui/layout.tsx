@@ -54,11 +54,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex">
-      <aside className={`bg-slate-950 ${isSidebarOpen ? 'w-16' : 'w-0'} min-h-screen flex flex-col items-center py-8 border-r border-gray-800 transition-all duration-300`}>
-      <div className="mb-8">
+      <aside className={`bg-slate-950 ${isSidebarOpen ? ' w-20 ' : 'w-0'} min-h-screen flex flex-col items-center py-8 border-r border-gray-800 transition-all duration-300`}>
+      <div className="mb-14">
           <Key className="h-8 w-8"></Key>
       </div>
-        <nav className="space-y-4">
+        <nav className="space-y-10 grid">
           <SidebarItem icon={Home} label="Home" href="/" isActive={pathname === '/'} />
           <SidebarItem icon={User} label="Personal" href="/personal" isActive={pathname === '/personal'} />
           <SidebarItem icon={Users} label="Groups" href="/groups" isActive={pathname === '/groups'} />

@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Label } from "@/components/ui/label"
 import GroupInfo from "@/components/ui/sharedgrouppassword"
+import moment from "moment"
 
 interface Groups {
   name: string,
   id: number
+  created_at : string;
 }
 
 
@@ -173,7 +175,7 @@ export default function Groups() {
 
         <Card className="bg-gray-900 border border-gray-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b border-gray-800">
-            <CardTitle className="text-2xl font-bold text-white">Shared Group Secrets</CardTitle>
+            <CardTitle className="text-2xl font-bold text-white"> Groups </CardTitle>
           </CardHeader>
           <CardContent className="pt-4 overflow-y-auto h-[calc(100vh-150px)]">
             <div className="space-y-4">
@@ -184,6 +186,7 @@ export default function Groups() {
                   onClick={() => handleGroupClick(group)}>
                   <div className="flex justify-between items-center">
                     <h2 className="text-lg font-semibold text-white">{group.name}</h2>
+                    <span className="text-sm text-gray-400">{moment(group.created_at).format('h:mm A MMM DD, YYYY')}</span>
                   </div>
                 </div>
               ))}
